@@ -2052,6 +2052,10 @@ namespace StackExchange.Redis
                                 add("Local-CPU", "Local-CPU", GetSystemCpuPercent());
                             }
 #endif
+
+                            // Include additional diagnostic information
+                            sb.Append(DebugHelper.GetLogDump());
+
                             sb.Append(" (Please take a look at this article for some common client-side issues that can cause timeouts: ");
                             sb.Append(timeoutHelpLink);
                             sb.Append(")");
