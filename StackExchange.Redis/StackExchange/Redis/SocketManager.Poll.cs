@@ -120,7 +120,9 @@ namespace StackExchange.Redis
                 if (weAreReader)
                 {
                     managerState = ManagerState.Preparing;
+                    DebugHelper.AddLog("Read() is about to call ReadImpl()");
                     ReadImpl();
+                    DebugHelper.AddLog("ReadImpl() has returned without error from Read()");
                     managerState = ManagerState.Inactive;
                 }
             }
@@ -129,6 +131,7 @@ namespace StackExchange.Redis
                 if (weAreReader)
                 {
                     managerState = ManagerState.Faulted;
+                    DebugHelper.AddLog($"ReadImpl() has returned with error from Read(): {ex}");
                 }
                 Debug.WriteLine(ex);
                 Trace.WriteLine(ex);
@@ -194,14 +197,21 @@ namespace StackExchange.Redis
                 managerState = ManagerState.LocateActiveSockets;
                 lock (socketLookup)
                 {
-                    if (isDisposed) return;
+                    if (isDisposed)
+                    {
+                        DebugHelper.AddLog("ReadImpl() appears disposed, returning from loop");
+                        return;
+                    }
 
                     if (socketLookup.Count == 0)
                     {
                         // if empty, give it a few seconds chance before exiting
                         managerState = ManagerState.NoSocketsPause;
                         Monitor.Wait(socketLookup, TimeSpan.FromSeconds(20));
-                        if (socketLookup.Count == 0) return; // nothing new came in, so exit
+                        if (socketLookup.Count == 0) {
+                            DebugHelper.AddLog("ReadImpl() has no sockets, returning from loop");
+                            return; // nothing new came in, so exit
+                        }
                     }
                     managerState = ManagerState.PrepareActiveSockets;
                     foreach (var pair in socketLookup)
